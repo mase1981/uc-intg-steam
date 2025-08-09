@@ -2,7 +2,7 @@
 
 This integration displays your currently playing Steam game and online friends information on your Unfolded Circle Remote Two/Three.
 
-**Developer:** Meir Miyara (meir.miyara@gmail.com) :smiley:
+**Developer:** Meir Miyara :smiley:
 
 ## Features
 
@@ -19,7 +19,7 @@ This integration displays your currently playing Steam game and online friends i
 
 - **Automatic Updates**
   - 30-second refresh intervals
-  - Survives Remote Two reboots
+  - Survives Remote reboots
   - Graceful error handling
   - Battery-optimized polling
 
@@ -208,7 +208,7 @@ docker run -d \
 
 ### Debug Information
 
-Check the Remote Two logs for detailed information:
+Check the Remote logs for detailed information:
 - Steam API connection status
 - Authentication issues
 - Rate limiting messages
