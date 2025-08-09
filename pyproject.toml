@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uc-intg-steam"
+description = "Steam integration for Unfolded Circle Remote Two"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MPL-2.0"}
+authors = [
+    {name = "Meir Miyara", email = "meir.miyara@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+    "Topic :: Multimedia",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "ucapi==0.3.1",
+    "aiohttp>=3.8.0",
+    "asyncio-throttle>=1.0.0",
+    "certifi"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mase1981/uc-intg-steam"
+"Bug Reports" = "https://github.com/mase1981/uc-intg-steam/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "uc_intg_steam.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools_scm]
+write_to = "uc_intg_steam/_version.py"

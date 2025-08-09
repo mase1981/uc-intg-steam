@@ -1,0 +1,52 @@
+{
+  "driver_id": "uc-intg-steam",
+  "name": { "en": "Steam Integration" },
+  "icon": "uc:gamepad-modern",
+  "description": {
+    "en": "Displays your currently playing Steam game and online friends."
+  },
+  "version": "1.0.0",
+  "developer": { 
+    "name": "Meir Miyara",
+    "email": "meir.miyara@gmail.com"
+  },
+  "min_core_api": "0.3.1",
+  "setup_data_schema": {
+    "title": { "en": "Steam Integration Setup" },
+    "settings": [
+      {
+        "id": "instructions",
+        "label": {
+          "en": "Setup Instructions"
+        },
+        "field": {
+          "label": {
+            "value": {
+              "en": "Before proceeding, you need to get your Steam credentials:\n\n🔑 STEAM WEB API KEY:\n1. Go to https://steamcommunity.com/dev/apikey\n2. Sign in with your Steam account\n3. Enter any domain name (e.g., localhost)\n4. Copy the generated API key\n\n👤 STEAM ID (64-bit):\n1. Go to https://steamid.io/\n2. Enter your Steam profile URL or username\n3. Copy the 'steamID64' number (17 digits)\n\nAlternatively for Steam ID:\n- Open Steam > View > Settings > Interface\n- Check 'Display Steam URL address when available'\n- Your Steam ID is the number in your profile URL"
+            }
+          }
+        }
+      },
+      {
+        "id": "steam_api_key",
+        "label": { "en": "Steam Web API Key" },
+        "field": { 
+          "text": { 
+            "value": "",
+            "placeholder": "Enter your Steam Web API Key"
+          } 
+        }
+      },
+      {
+        "id": "steam_id",
+        "label": { "en": "Steam ID (64-bit)" },
+        "field": { 
+          "text": { 
+            "value": "",
+            "placeholder": "17-digit Steam ID (e.g., 76561198012345678)"
+          } 
+        }
+      }
+    ]
+  }
+}
