@@ -1,5 +1,5 @@
 """
-Steam media player entities.
+Steam media player entities with high-resolution Steam logo caching.
 
 :copyright: (c) 2025 by Meir Miyara.
 :license: MPL-2.0, see LICENSE for more details.
@@ -16,6 +16,9 @@ from ucapi import (
 
 _LOG = logging.getLogger(__name__)
 
+# Cache for Steam logo (similar to Xbox Live artwork caching)
+STEAM_LOGO_CACHE = ""
+
 
 async def steam_command_handler(entity, command: str, params: dict[str, Any] | None = None) -> StatusCodes:
     """Command handler for Steam entities."""
@@ -30,6 +33,18 @@ async def steam_command_handler(entity, command: str, params: dict[str, Any] | N
         return StatusCodes.OK
     else:
         return StatusCodes.NOT_IMPLEMENTED
+
+
+def get_steam_logo_url() -> str:
+    """Get cached high-resolution Steam logo URL."""
+    global STEAM_LOGO_CACHE
+    
+    if not STEAM_LOGO_CACHE:
+        # Cache the high-resolution Steam logo URL (like Xbox Live does for artwork)
+        STEAM_LOGO_CACHE = "https://store.steampowered.com/public/shared/images/header/logo_steam.svg"
+        _LOG.debug("Cached Steam logo URL")
+    
+    return STEAM_LOGO_CACHE
 
 
 class SteamCurrentlyPlayingEntity(MediaPlayer):
@@ -103,14 +118,14 @@ class SteamCurrentlyPlayingEntity(MediaPlayer):
 
 
 class SteamFriendsEntity(MediaPlayer):
-    """Steam friends list entity."""
+    """Steam friends list entity with high-resolution Steam logo."""
 
     def __init__(self, api=None):
         """Initialize friends entity."""
         features = [media_player.Features.ON_OFF]
         
-        # Steam logo for friends entity
-        steam_logo_url = "https://store.steampowered.com/favicon.ico"
+        # Use cached high-resolution Steam logo (like Xbox Live pattern)
+        steam_logo_url = get_steam_logo_url()
         
         initial_attributes = {
             media_player.Attributes.STATE: media_player.States.ON,
@@ -138,7 +153,9 @@ class SteamFriendsEntity(MediaPlayer):
     async def update_friends_info(self, friends_info: dict[str, Any]) -> None:
         """Update entity with friends information."""
         new_attributes = self.attributes.copy()
-        steam_logo_url = "https://store.steampowered.com/favicon.ico"
+        
+        # Always use cached Steam logo (like Xbox Live artwork handling)
+        steam_logo_url = get_steam_logo_url()
         
         try:
             if friends_info and "online_count" in friends_info:

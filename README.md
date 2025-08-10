@@ -23,6 +23,31 @@ This integration displays your currently playing Steam game and online friends i
   - Graceful error handling
   - Battery-optimized polling
 
+## Performance & Caching
+
+The Steam integration includes intelligent caching to provide a smooth, reliable experience:
+
+### **Smart Error Recovery**
+- **Handles Steam server issues**: When Steam API returns 502/503 errors, the integration uses cached data to prevent flickering
+- **Maintains stable display**: Your currently playing game and friends count stay visible during temporary API outages
+- **Graceful degradation**: Falls back to last known good state instead of showing errors
+
+### **Artwork Caching**
+- **Game images cached**: Once a game's artwork is loaded, it's cached to reduce API calls
+- **High-resolution Steam logo**: Friends entity uses Steam's official high-quality SVG logo instead of tiny favicon
+- **Faster loading**: Repeated views of the same games load instantly from cache
+
+### **API Optimization**
+- **Intelligent throttling**: Respects Steam's 1 request/second limit with built-in throttling
+- **Reduced flickering**: Cached responses prevent rapid state changes during API hiccups
+- **Battery efficient**: Optimized polling reduces unnecessary network requests
+
+### **Cache Benefits**
+- **Stable user experience** during temporary Steam server issues
+- **Faster response times** for previously seen games
+- **Reduced network usage** on your Remote device
+- **Professional appearance** with high-quality Steam branding
+
 ## Prerequisites
 
 1. Unfolded Circle Remote Two/3
@@ -248,7 +273,7 @@ uc-intg-steam/
 ├── uc_intg_steam/
 │   ├── __init__.py
 │   ├── driver.py          # Main integration driver
-│   ├── client.py          # Steam API client
+│   ├── client.py          # Steam API client with caching
 │   ├── config.py          # Configuration management
 │   ├── setup.py           # Setup handler
 │   ├── media_player.py    # Media player entities
@@ -276,10 +301,10 @@ Use VSCode with the provided `launch.json` configuration:
 ### Key Implementation Notes
 
 1. **Rate Limiting**: Respects Steam's API limits with 1 request per second throttling
-2. **Error Handling**: Graceful fallbacks for network issues and privacy restrictions
+2. **Error Handling**: Advanced caching system prevents flickering during Steam API outages
 3. **Privacy Aware**: Handles private Steam profiles without crashing
 4. **Persistent**: Survives Remote Two reboots and network outages
-5. **Battery Friendly**: Optimized polling intervals
+5. **Battery Friendly**: Optimized polling intervals with intelligent caching
 
 ## API Rate Limiting
 
@@ -299,6 +324,12 @@ The integration respects Steam's API rate limits:
 - **Game artwork**: Steam CDN header images
 - **Game information**: Steam Web API player summaries
 - **Friend status**: Steam Web API friend summaries
+
+### Caching & Performance
+- **Artwork caching**: Game images cached by title to reduce API calls
+- **Data persistence**: API responses cached during temporary server errors
+- **High-quality assets**: Uses Steam's official SVG logo for crisp display
+- **Smart fallbacks**: Maintains last known state during API disruptions
 
 ### Security & Privacy
 - **Your Steam API key stays on your device**

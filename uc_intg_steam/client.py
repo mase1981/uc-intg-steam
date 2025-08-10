@@ -1,5 +1,5 @@
 """
-Steam API client.
+Steam API client with caching mechanism similar to Xbox Live integration.
 
 :copyright: (c) 2025 by Meir Miyara.
 :license: MPL-2.0, see LICENSE for more details.
@@ -13,6 +13,14 @@ from asyncio_throttle import Throttler
 
 _LOG = logging.getLogger(__name__)
 
+# Global cache for game artwork - similar to Xbox Live's ARTWORK_CACHE
+STEAM_ARTWORK_CACHE = {}
+STEAM_DATA_CACHE = {
+    "currently_playing": None,
+    "friends_data": None,
+    "last_update": 0
+}
+
 
 class SteamAPIError(Exception):
     """Steam API error."""
@@ -20,7 +28,7 @@ class SteamAPIError(Exception):
 
 
 class SteamClient:
-    """Steam API client."""
+    """Steam API client with Xbox Live-style caching."""
 
     def __init__(self, api_key: str, steam_id: str):
         """Initialize Steam client."""
@@ -54,7 +62,7 @@ class SteamClient:
             _LOG.debug("Steam client session closed")
 
     async def _make_request(self, endpoint: str, params: dict[str, Any]) -> dict[str, Any]:
-        """Make throttled API request."""
+        """Make throttled API request with better error handling."""
         if not self.session:
             await self.connect()
 
@@ -71,6 +79,9 @@ class SteamClient:
                         raise SteamAPIError("Invalid API key")
                     elif response.status == 403:
                         raise SteamAPIError("Access denied - check Steam ID and privacy settings")
+                    elif response.status in [502, 503, 504]:
+                        # Steam server errors - use cached data if available
+                        raise SteamAPIError(f"Steam servers temporarily unavailable (HTTP {response.status})")
                     else:
                         raise SteamAPIError(f"API request failed with status {response.status}")
             except aiohttp.ClientError as e:
@@ -103,48 +114,92 @@ class SteamClient:
                 raise
 
     async def get_currently_playing(self) -> tuple[Optional[dict[str, Any]], Optional[str]]:
-        """Get currently playing game and its image URL."""
+        """Get currently playing game with caching to prevent flickering."""
         try:
             data = await self.get_player_summaries()
             
             if "response" not in data or "players" not in data["response"]:
+                # Return cached data if API fails
+                if STEAM_DATA_CACHE["currently_playing"]:
+                    _LOG.debug("Using cached currently playing data due to API issues")
+                    return STEAM_DATA_CACHE["currently_playing"]
                 return None, None
                 
             players = data["response"]["players"]
             if not players:
+                if STEAM_DATA_CACHE["currently_playing"]:
+                    _LOG.debug("Using cached data - no players returned")
+                    return STEAM_DATA_CACHE["currently_playing"]
                 return None, None
                 
             player = players[0]
             
             if "gameid" in player and "gameextrainfo" in player:
+                game_name = player["gameextrainfo"]
+                appid = player["gameid"]
+                
+                # Check cache for artwork URL first (like Xbox Live does)
+                if game_name in STEAM_ARTWORK_CACHE:
+                    image_url = STEAM_ARTWORK_CACHE[game_name]
+                    _LOG.debug(f"Using cached artwork for '{game_name}'")
+                else:
+                    # Cache the Steam CDN URL for this game
+                    image_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"
+                    STEAM_ARTWORK_CACHE[game_name] = image_url
+                    _LOG.debug(f"Cached new artwork URL for '{game_name}': {image_url}")
+                
                 game_data = {
-                    "appid": player["gameid"],
-                    "name": player["gameextrainfo"],
+                    "appid": appid,
+                    "name": game_name,
                     "personastate": player.get("personastate", 0)
                 }
                 
-                image_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{player['gameid']}/header.jpg"
-                return game_data, image_url
+                result = (game_data, image_url)
                 
-            return None, None
-            
+                # Cache the successful result (like Xbox Live pattern)
+                STEAM_DATA_CACHE["currently_playing"] = result
+                return result
+            else:
+                # User not playing - cache this state too
+                result = (None, None)
+                STEAM_DATA_CACHE["currently_playing"] = result
+                return result
+                
+        except SteamAPIError as e:
+            if "temporarily unavailable" in str(e) or "502" in str(e) or "503" in str(e):
+                # Use cache during temporary Steam server issues (like Xbox Live does)
+                if STEAM_DATA_CACHE["currently_playing"]:
+                    _LOG.debug(f"Using cached data due to Steam server issues: {e}")
+                    return STEAM_DATA_CACHE["currently_playing"]
+                else:
+                    _LOG.warning("Steam servers temporarily unavailable and no cache available")
+                    return None, None
+            else:
+                _LOG.error("Error getting currently playing game: %s", e)
+                return None, None
         except Exception as e:
-            _LOG.error("Error getting currently playing game: %s", e)
+            _LOG.error("Unexpected error getting currently playing game: %s", e)
             return None, None
 
     async def get_online_friends(self) -> list[dict[str, Any]]:
-        """Get list of online friends and what they're playing."""
+        """Get list of online friends with caching."""
         try:
             friends_data = await self.get_friend_list()
             
             if "friendslist" not in friends_data or "friends" not in friends_data["friendslist"]:
+                # Use cache if API fails (like Xbox Live pattern)
+                if STEAM_DATA_CACHE["friends_data"]:
+                    _LOG.debug("Using cached friends data due to API issues")
+                    return STEAM_DATA_CACHE["friends_data"]
                 _LOG.info("No friends list data available")
                 return []
                 
             friend_steam_ids = [friend["steamid"] for friend in friends_data["friendslist"]["friends"]]
             
             if not friend_steam_ids:
-                return []
+                result = []
+                STEAM_DATA_CACHE["friends_data"] = result
+                return result
                 
             batch_size = 100
             all_online_friends = []
@@ -172,11 +227,20 @@ class SteamClient:
                 except Exception as e:
                     _LOG.error("Error processing friend batch: %s", e)
                     continue
-                    
+            
+            # Cache successful result (like Xbox Live)
+            STEAM_DATA_CACHE["friends_data"] = all_online_friends
             return all_online_friends
             
-        except Exception as e:
+        except SteamAPIError as e:
+            if "temporarily unavailable" in str(e) or "502" in str(e) or "503" in str(e):
+                if STEAM_DATA_CACHE["friends_data"]:
+                    _LOG.debug("Using cached friends due to Steam server issues")
+                    return STEAM_DATA_CACHE["friends_data"]
             _LOG.error("Error getting online friends: %s", e)
+            return []
+        except Exception as e:
+            _LOG.error("Unexpected error getting online friends: %s", e)
             return []
 
     @staticmethod
@@ -192,3 +256,9 @@ class SteamClient:
             4: "Snooze", 5: "Looking to trade", 6: "Looking to play"
         }
         return states.get(state, "Unknown")
+
+    @staticmethod
+    def get_steam_logo_url() -> str:
+        """Get high-resolution Steam logo URL (cached like Xbox Live artwork)."""
+        # Using Steam's official high-res logo from their brand assets
+        return "https://store.steampowered.com/public/shared/images/header/logo_steam.svg"
