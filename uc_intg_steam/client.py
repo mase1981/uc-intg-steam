@@ -144,7 +144,7 @@ class SteamClient:
                     _LOG.debug(f"Using cached artwork for '{game_name}'")
                 else:
                     # Cache the Steam CDN URL for this game
-                    image_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"
+                    image_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/library_600x900.jpg"
                     STEAM_ARTWORK_CACHE[game_name] = image_url
                     _LOG.debug(f"Cached new artwork URL for '{game_name}': {image_url}")
                 
