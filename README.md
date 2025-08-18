@@ -99,64 +99,56 @@ For the friends list feature to work properly:
 
 ### Method 2: Docker Deployment
 
-You can run the Steam integration as a Docker container for easy deployment and management.
+Run the Steam integration as a Docker container on any host machine (server, NAS, Raspberry Pi, etc.). The Remote will automatically discover it via zeroconf/mDNS.
 
-#### Prerequisites for Docker
-1. Docker and Docker Compose installed
-2. Your Remote Two on the same network as the Docker host
+#### Quick Start (Single Command)
+```bash
+docker run -d --name uc-intg-steam --network host --restart unless-stopped -v uc-steam-config:/config mase1981/uc-intg-steam:latest
+```
 
-#### Quick Start with Docker Compose
+#### Docker Compose (Recommended)
 
-1. **Create a directory for the integration:**
-   ```bash
-   mkdir uc-steam-integration
-   cd uc-steam-integration
-   ```
-
-2. **Create docker-compose.yml:**
+1. **Create docker-compose.yml:**
    ```yaml
    version: '3.8'
    services:
-     steam-integration:
-       image: mase1981/uc-intg-steam:latest
-       container_name: uc-steam-integration
-       network_mode: host
-       volumes:
-         - steam-config:/app/config
+     uc-intg-steam:
+       build: .
+       container_name: uc-intg-steam
        restart: unless-stopped
+       network_mode: host
        environment:
-         - UC_INTEGRATION_INTERFACE=0.0.0.0
          - UC_INTEGRATION_HTTP_PORT=9090
-
-   volumes:
-     steam-config:
+         - UC_CONFIG_HOME=/config
+       volumes:
+         - ./config:/config
    ```
 
-3. **Start the container:**
+2. **Clone and start:**
    ```bash
+   git clone https://github.com/mase1981/uc-intg-steam.git
+   cd uc-intg-steam
    docker-compose up -d
    ```
 
-4. **Check logs:**
+3. **Check logs:**
    ```bash
-   docker-compose logs -f steam-integration
+   docker-compose logs -f uc-intg-steam
    ```
 
-5. **Configure via Remote Two:**
-   - Open your Remote Two web configurator
-   - The integration should be auto-discovered via mDNS
-   - Follow the normal setup process
+#### Docker Configuration
 
-#### Manual Docker Run
+- **Auto-discovery**: The container will be automatically discovered by your Remote
+- **Port**: Uses port 9090 (ensure it's not in use)
+- **Network**: Uses host networking for proper mDNS discovery
+- **Config**: All settings configured through the Remote's web interface
+- **Persistence**: Configuration stored in `/config` volume
 
-```bash
-docker run -d \
-  --name uc-steam-integration \
-  --network host \
-  -v steam-config:/app/config \
-  --restart unless-stopped \
-  mase1981/uc-intg-steam:latest
-```
+#### Docker Troubleshooting
+
+1. **Integration not discovered**: Ensure Remote and Docker host are on same network
+2. **Port conflicts**: Change `UC_INTEGRATION_HTTP_PORT` to different port
+3. **Check logs**: `docker logs uc-intg-steam` for error details
 
 ### Method 3: Development Installation
 1. Clone this repository
@@ -287,6 +279,8 @@ uc-intg-steam/
 ├── config.json            # Runtime configuration (created during setup)
 ├── pyproject.toml         # Python project configuration
 ├── requirements.txt       # Python dependencies
+├── Dockerfile             # Docker image configuration
+├── docker-compose.yml     # Docker Compose configuration
 └── README.md
 ```
 
