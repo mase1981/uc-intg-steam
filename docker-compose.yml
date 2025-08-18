@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  uc-intg-steam:
+    build: .
+    container_name: uc-intg-steam
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - UC_INTEGRATION_HTTP_PORT=9090
+      - UC_CONFIG_HOME=/config
+    volumes:
+      - ./config:/config
